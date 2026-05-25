@@ -1,6 +1,8 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import { WebSocketServer } from 'ws';
 import { universe } from './universe.js';
 import { buildSignal } from './signal-engine.js';
@@ -16,6 +18,8 @@ app.use(express.json());
 
 const PORT = process.env.PORT || 8080;
 const store = memoryStore();
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const frontendDir = path.join(__dirname, 'frontend');
 
 app.get('/health', (_req, res) => res.json({ ok: true, service: 'quantaedge-backend' }));
 app.get('/api/universe', (_req, res) => res.json({ universe }));
@@ -29,6 +33,8 @@ app.post('/api/alert/simulate', (req, res) => {
   res.json({ ok: true, alert });
   broadcast(wss, { type: 'alert', alert });
 });
+app.use(express.static(frontendDir));
+app.get('/', (_req, res) => res.sendFile(path.join(frontendDir, 'index.html')));
 
 const server = app.listen(PORT, () => console.log(`Server running on ${PORT}`));
 const wss = new WebSocketServer({ server, path: '/ws' });
