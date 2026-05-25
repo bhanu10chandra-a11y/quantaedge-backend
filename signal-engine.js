@@ -11,7 +11,8 @@ function score(seed, m1, m2) {
 }
 
 export function buildSignal(u, strike, side) {
-  const seed = u.spot + strike + (side === 'CE' ? 11 : 17);
+  const spot = u.liveSpot ?? u.spot;
+  const seed = spot + strike + (side === 'CE' ? 11 : 17);
   const gex = score(seed, 7, 13);
   const quantumMath = score(seed, 5, 29);
   const quantumAi = score(seed, 11, 7);
@@ -26,7 +27,7 @@ export function buildSignal(u, strike, side) {
   const supportProb = clamp(round((institutionalInterest + oiSentiment + quantumMath) / 3), 0, 100);
   const targetProb = clamp(round((gex + quantumAi + agenticAi) / 3), 0, 100);
   const probability = clamp(round(quantumScore * 0.45 + targetProb * 0.3 + supportProb * 0.25), 0, 100);
-  const entryLow = Math.max(1, (u.spot * 0.004 + (100 - quantumScore) * 0.04));
+  const entryLow = Math.max(1, (spot * 0.004 + (100 - quantumScore) * 0.04));
   const entryHigh = entryLow * 1.08;
   const dir = side === 'CE' ? 1 : -1;
   const targets = [

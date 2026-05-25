@@ -38,6 +38,7 @@ app.get('/', (_req, res) => res.sendFile(path.join(frontendDir, 'index.html')));
 
 const server = app.listen(PORT, () => console.log(`Server running on ${PORT}`));
 const wss = new WebSocketServer({ server, path: '/ws' });
+const liveSpots = {};
 
 wss.on('connection', ws => {
   ws.send(JSON.stringify({ type: 'hello', message: 'connected to QuantaEdge backend' }));
@@ -48,11 +49,12 @@ wss.on('connection', ws => {
 function buildUniverseSignals() {
   const rows = [];
   for (const u of universe) {
+    const enriched = { ...u, liveSpot: liveSpots[u.symbol] ?? u.spot };
     for (const strike of u.strikes) {
-      rows.push(buildSignal(u, strike, 'CE'));
-      rows.push(buildSignal(u, strike, 'PE'));
+      rows.push(buildSignal(enriched, strike, 'CE'));
+      rows.push(buildSignal(enriched, strike, 'PE'));
       if (u.type === 'STOCK') {
-        const stockScore = buildSignal(u, strike, 'CE');
+        const stockScore = buildSignal(enriched, strike, 'CE');
         if (stockScore.decision === 'CASH BUY') {
           rows.push({ ...stockScore, decision: 'CASH BUY', mode: 'CASH' });
         }
@@ -62,7 +64,7 @@ function buildUniverseSignals() {
   const payload = { ts: new Date().toISOString(), rows };
   store.setLatest(payload);
   broadcast(wss, { type: 'signals', ...payload });
-  const hottest = [...rows].sort((a, b) => b.quantumScore - a.quantumScore)[0];
+  const hottest = [...rows].sort((a, b) => b.reversalScore - a.reversalScore)[0];
   if (hottest && hottest.reversalScore > 85) {
     const alert = { time: new Date().toISOString(), message: `${hottest.symbol} ${hottest.strike} reversal alert. Exit immediately.` };
     store.pushAlert(alert);
@@ -75,6 +77,8 @@ setInterval(buildUniverseSignals, 3000);
 startDhanFeed({
   onTick(tick) {
     store.setTick(tick);
+    if (tick.symbol && tick.ltp > 0) liveSpots[tick.symbol] = tick.ltp;
     broadcast(wss, { type: 'tick', tick });
+    buildUniverseSignals();
   }
 });
