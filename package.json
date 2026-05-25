@@ -5,12 +5,13 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "dev": "node --watch server.js"
+    "check": "node --check server.js && node --check dhan-feed.js && node --check signal-engine.js && node --check universe.js && node --check storage.js && node --check ws-broadcast.js"
   },
   "dependencies": {
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
     "express": "^4.19.2",
+    "ioredis": "^5.4.1",
     "ws": "^8.18.0"
   }
 }

@@ -1,4 +1,3 @@
-// ws-broadcast.js — broadcast to all connected WebSocket clients
 export function broadcast(wss, payload) {
   const msg = JSON.stringify(payload);
   wss.clients.forEach(client => {

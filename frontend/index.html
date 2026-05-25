@@ -1,0 +1,622 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>QuantaEdge NSE Production Screener</title>
+    <style>
+      :root {
+        --bg: #070b14;
+        --panel: #0d1524;
+        --panel-2: #111d31;
+        --line: #243148;
+        --text: #edf4ff;
+        --muted: #8ca0bd;
+        --green: #16f29a;
+        --red: #ff5b73;
+        --amber: #ffd166;
+        --blue: #59a6ff;
+        --purple: #b685ff;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        color: var(--text);
+        font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        background:
+          radial-gradient(circle at top left, rgba(89, 166, 255, 0.22), transparent 30rem),
+          radial-gradient(circle at top right, rgba(182, 133, 255, 0.16), transparent 34rem),
+          var(--bg);
+      }
+
+      header {
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 1rem;
+        align-items: center;
+        padding: 1rem 1.25rem;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        background: rgba(7, 11, 20, 0.88);
+        backdrop-filter: blur(18px);
+      }
+
+      h1 {
+        margin: 0;
+        font-size: clamp(1.15rem, 3vw, 1.75rem);
+        letter-spacing: -0.04em;
+      }
+
+      .sub {
+        margin-top: 0.25rem;
+        color: var(--muted);
+        font-size: 0.82rem;
+      }
+
+      .status {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        justify-content: flex-end;
+      }
+
+      .pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        padding: 0.45rem 0.65rem;
+        color: var(--muted);
+        background: rgba(17, 29, 49, 0.78);
+        font-size: 0.78rem;
+        white-space: nowrap;
+      }
+
+      .dot {
+        width: 0.55rem;
+        height: 0.55rem;
+        border-radius: 50%;
+        background: var(--red);
+        box-shadow: 0 0 12px currentColor;
+      }
+
+      .dot.ok {
+        background: var(--green);
+      }
+
+      main {
+        display: grid;
+        gap: 1rem;
+        padding: 1rem;
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: 320px 1fr;
+        gap: 1rem;
+      }
+
+      .card {
+        border: 1px solid var(--line);
+        border-radius: 1rem;
+        background: rgba(13, 21, 36, 0.9);
+        box-shadow: 0 1.25rem 5rem rgba(0, 0, 0, 0.25);
+        overflow: hidden;
+      }
+
+      .card h2 {
+        margin: 0;
+        padding: 0.9rem 1rem;
+        border-bottom: 1px solid var(--line);
+        font-size: 0.95rem;
+        letter-spacing: -0.02em;
+      }
+
+      .filters {
+        display: grid;
+        gap: 0.85rem;
+        padding: 1rem;
+      }
+
+      label {
+        display: grid;
+        gap: 0.35rem;
+        color: var(--muted);
+        font-size: 0.78rem;
+      }
+
+      input,
+      select,
+      button {
+        border: 1px solid var(--line);
+        border-radius: 0.7rem;
+        padding: 0.7rem 0.75rem;
+        color: var(--text);
+        background: var(--panel-2);
+        font: inherit;
+      }
+
+      button {
+        cursor: pointer;
+      }
+
+      button.primary {
+        border-color: rgba(89, 166, 255, 0.5);
+        background: linear-gradient(135deg, rgba(89, 166, 255, 0.25), rgba(182, 133, 255, 0.18));
+      }
+
+      .tabs {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        padding: 1rem;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .tab {
+        border-radius: 999px;
+        padding: 0.55rem 0.75rem;
+        color: var(--muted);
+        background: rgba(17, 29, 49, 0.75);
+      }
+
+      .tab.active {
+        color: #06100c;
+        border-color: rgba(22, 242, 154, 0.75);
+        background: var(--green);
+      }
+
+      .stats {
+        display: grid;
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        gap: 0.7rem;
+      }
+
+      .stat {
+        border: 1px solid var(--line);
+        border-radius: 0.95rem;
+        padding: 0.85rem;
+        background: rgba(17, 29, 49, 0.72);
+      }
+
+      .stat b {
+        display: block;
+        margin-top: 0.35rem;
+        font-size: 1.35rem;
+      }
+
+      .stat span {
+        color: var(--muted);
+        font-size: 0.75rem;
+      }
+
+      .table-wrap {
+        overflow: auto;
+        max-height: 65vh;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        min-width: 1280px;
+      }
+
+      th,
+      td {
+        padding: 0.7rem 0.75rem;
+        border-bottom: 1px solid rgba(36, 49, 72, 0.65);
+        text-align: left;
+        font-size: 0.8rem;
+      }
+
+      th {
+        position: sticky;
+        top: 0;
+        z-index: 1;
+        color: var(--muted);
+        background: #0b1220;
+        font-weight: 650;
+      }
+
+      tr:hover td {
+        background: rgba(89, 166, 255, 0.06);
+      }
+
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        border-radius: 999px;
+        padding: 0.28rem 0.48rem;
+        font-size: 0.72rem;
+        font-weight: 750;
+      }
+
+      .call {
+        color: #06100c;
+        background: var(--green);
+      }
+
+      .put,
+      .exit {
+        color: #19060a;
+        background: var(--red);
+      }
+
+      .cash {
+        color: #191200;
+        background: var(--amber);
+      }
+
+      .wait {
+        color: var(--muted);
+        background: rgba(140, 160, 189, 0.12);
+      }
+
+      .score {
+        display: grid;
+        gap: 0.25rem;
+        min-width: 5rem;
+      }
+
+      .bar {
+        height: 0.45rem;
+        border-radius: 99px;
+        background: rgba(255, 255, 255, 0.1);
+        overflow: hidden;
+      }
+
+      .bar i {
+        display: block;
+        height: 100%;
+        width: var(--v);
+        background: linear-gradient(90deg, var(--blue), var(--green));
+      }
+
+      .targets {
+        display: grid;
+        gap: 0.18rem;
+        color: #c9d8f0;
+      }
+
+      .banner {
+        display: none;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        padding: 0.85rem 1rem;
+        border: 1px solid rgba(255, 91, 115, 0.35);
+        border-radius: 0.9rem;
+        background: rgba(255, 91, 115, 0.12);
+      }
+
+      .banner.show {
+        display: flex;
+      }
+
+      .alerts {
+        display: grid;
+        gap: 0.65rem;
+        max-height: 20rem;
+        overflow: auto;
+        padding: 1rem;
+      }
+
+      .alert {
+        border: 1px solid rgba(255, 91, 115, 0.3);
+        border-radius: 0.85rem;
+        padding: 0.7rem;
+        color: #ffdbe1;
+        background: rgba(255, 91, 115, 0.09);
+      }
+
+      .empty {
+        color: var(--muted);
+        padding: 1rem;
+      }
+
+      @media (max-width: 1000px) {
+        header,
+        .grid {
+          grid-template-columns: 1fr;
+        }
+
+        .status {
+          justify-content: flex-start;
+        }
+
+        .stats {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div>
+        <h1>QuantaEdge NSE Production Screener</h1>
+        <div class="sub">Live quantum score, option/cash decisioning, target ladders, institutional zones, sideways state, and reversal exits.</div>
+      </div>
+      <div class="status">
+        <span class="pill"><i id="apiDot" class="dot"></i><span id="apiStatus">API connecting</span></span>
+        <span class="pill"><i id="wsDot" class="dot"></i><span id="wsStatus">WS connecting</span></span>
+        <span class="pill">Updated <span id="updatedAt">--</span></span>
+      </div>
+    </header>
+
+    <main>
+      <section id="exitBanner" class="banner">
+        <strong id="exitText">Reversal exit risk detected.</strong>
+        <button id="dismissExit">Dismiss</button>
+      </section>
+
+      <section class="stats">
+        <div class="stat"><span>Total rows</span><b id="statRows">0</b></div>
+        <div class="stat"><span>Call buys</span><b id="statCalls">0</b></div>
+        <div class="stat"><span>Put buys</span><b id="statPuts">0</b></div>
+        <div class="stat"><span>Cash buys</span><b id="statCash">0</b></div>
+        <div class="stat"><span>Sideways risk</span><b id="statSideways">0</b></div>
+      </section>
+
+      <section class="grid">
+        <aside class="card">
+          <h2>Advanced Filters</h2>
+          <div class="filters">
+            <label>
+              Search symbol / strike
+              <input id="search" placeholder="NIFTY, 24800 CE..." />
+            </label>
+            <label>
+              Decision
+              <select id="decision">
+                <option value="ALL">All decisions</option>
+                <option>CALL BUY</option>
+                <option>PUT BUY</option>
+                <option>CASH BUY</option>
+                <option>WAIT</option>
+              </select>
+            </label>
+            <label>
+              Mode
+              <select id="mode">
+                <option value="ALL">All modes</option>
+                <option>OPTION</option>
+                <option>CASH</option>
+              </select>
+            </label>
+            <label>
+              Minimum Quantum Score
+              <input id="minScore" type="number" min="0" max="100" value="0" />
+            </label>
+            <label>
+              Maximum Sideways Probability
+              <input id="maxSideways" type="number" min="0" max="100" value="100" />
+            </label>
+            <button class="primary" id="simulateAlert">Simulate exit alert</button>
+          </div>
+          <h2>Live Alerts</h2>
+          <div id="alerts" class="alerts"><div class="empty">No alerts yet.</div></div>
+        </aside>
+
+        <section class="card">
+          <div id="tabs" class="tabs"></div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Symbol</th>
+                  <th>Strike</th>
+                  <th>Decision</th>
+                  <th>Mode</th>
+                  <th>Quantum</th>
+                  <th>Probability</th>
+                  <th>Entry</th>
+                  <th>Targets</th>
+                  <th>Institutional Zones</th>
+                  <th>Sideways</th>
+                  <th>Exit</th>
+                  <th>GEX / OI</th>
+                  <th>AI Stack</th>
+                </tr>
+              </thead>
+              <tbody id="rows"></tbody>
+            </table>
+          </div>
+        </section>
+      </section>
+    </main>
+
+    <script>
+      const params = new URLSearchParams(window.location.search);
+      const configuredApi = window.QUANTAEDGE_API_URL || params.get('api');
+      const sameOriginApi = window.location.protocol.startsWith('http') ? window.location.origin : 'http://localhost:8080';
+      const API_URL = (configuredApi || sameOriginApi).replace(/\/$/, '');
+      const WS_URL = API_URL.replace(/^http/, 'ws') + '/ws';
+
+      const state = {
+        universe: [],
+        activeSymbol: 'ALL',
+        rows: [],
+        alerts: [],
+        exitDismissed: false
+      };
+
+      const $ = id => document.getElementById(id);
+
+      function setStatus(kind, ok, text) {
+        $(`${kind}Dot`).classList.toggle('ok', ok);
+        $(`${kind}Status`).textContent = text;
+      }
+
+      function badgeClass(decision) {
+        if (decision === 'CALL BUY') return 'call';
+        if (decision === 'PUT BUY') return 'put';
+        if (decision === 'CASH BUY') return 'cash';
+        return 'wait';
+      }
+
+      function scoreCell(value) {
+        return `<div class="score"><b>${value}</b><div class="bar" style="--v:${value}%"><i></i></div></div>`;
+      }
+
+      function renderTabs() {
+        const symbols = ['ALL', ...state.universe.map(u => u.symbol)];
+        $('tabs').innerHTML = symbols.map(symbol => `
+          <button class="tab ${symbol === state.activeSymbol ? 'active' : ''}" data-symbol="${symbol}">${symbol}</button>
+        `).join('');
+        document.querySelectorAll('.tab').forEach(tab => {
+          tab.addEventListener('click', () => {
+            state.activeSymbol = tab.dataset.symbol;
+            renderTabs();
+            renderRows();
+          });
+        });
+      }
+
+      function filteredRows() {
+        const search = $('search').value.trim().toLowerCase();
+        const decision = $('decision').value;
+        const mode = $('mode').value;
+        const minScore = Number($('minScore').value || 0);
+        const maxSideways = Number($('maxSideways').value || 100);
+
+        return state.rows.filter(row => {
+          const haystack = `${row.symbol} ${row.strike} ${row.decision} ${row.mode}`.toLowerCase();
+          return (state.activeSymbol === 'ALL' || row.symbol === state.activeSymbol)
+            && (!search || haystack.includes(search))
+            && (decision === 'ALL' || row.decision === decision)
+            && (mode === 'ALL' || row.mode === mode)
+            && row.quantumScore >= minScore
+            && row.sidewaysProb <= maxSideways;
+        });
+      }
+
+      function renderStats(rows) {
+        $('statRows').textContent = rows.length;
+        $('statCalls').textContent = rows.filter(r => r.decision === 'CALL BUY').length;
+        $('statPuts').textContent = rows.filter(r => r.decision === 'PUT BUY').length;
+        $('statCash').textContent = rows.filter(r => r.decision === 'CASH BUY').length;
+        $('statSideways').textContent = rows.filter(r => r.sidewaysProb > 70).length;
+      }
+
+      function renderRows() {
+        const rows = filteredRows().sort((a, b) => b.quantumScore - a.quantumScore);
+        renderStats(rows);
+        $('rows').innerHTML = rows.map(row => `
+          <tr>
+            <td><b>${row.symbol}</b><br><span class="sub">${row.type} · ${row.expiry}</span></td>
+            <td>${row.strike}</td>
+            <td><span class="badge ${badgeClass(row.decision)}">${row.decision}</span></td>
+            <td><span class="badge ${row.mode === 'CASH' ? 'cash' : 'call'}">${row.mode}</span><br><span class="sub">${row.cashText}</span></td>
+            <td>${scoreCell(row.quantumScore)}</td>
+            <td>${scoreCell(row.probability)}</td>
+            <td>${row.entry}</td>
+            <td><div class="targets">${row.targets.map(t => `<span>${t}</span>`).join('')}</div></td>
+            <td>
+              <b>Support:</b> ${row.zones.support}<br>
+              <b>Target:</b> ${row.zones.target}<br>
+              <span class="sub">S ${row.supportProb}% · T ${row.targetProb}%</span>
+            </td>
+            <td>${scoreCell(row.sidewaysProb)}</td>
+            <td><span class="badge ${row.reversalScore > 78 ? 'exit' : 'wait'}">${row.exit}</span><br><span class="sub">Risk ${row.reversalScore}%</span></td>
+            <td>GEX ${row.gex}<br>OI ${row.oiSentiment}</td>
+            <td>Math ${row.quantumMath}<br>QAI ${row.quantumAi}<br>Agentic ${row.agenticAi}</td>
+          </tr>
+        `).join('');
+        renderExitBanner(rows);
+      }
+
+      function renderAlerts() {
+        if (!state.alerts.length) {
+          $('alerts').innerHTML = '<div class="empty">No alerts yet.</div>';
+          return;
+        }
+        $('alerts').innerHTML = state.alerts.slice(0, 20).map(alert => `
+          <div class="alert"><b>${new Date(alert.time).toLocaleTimeString()}</b><br>${alert.message}</div>
+        `).join('');
+      }
+
+      function renderExitBanner(rows) {
+        const risk = rows.find(row => row.reversalScore > 78);
+        $('exitBanner').classList.toggle('show', Boolean(risk) && !state.exitDismissed);
+        if (risk) $('exitText').textContent = `${risk.symbol} ${risk.strike}: ${risk.exit}`;
+      }
+
+      async function loadInitial() {
+        try {
+          const [universeRes, signalsRes, alertsRes] = await Promise.all([
+            fetch(`${API_URL}/api/universe`),
+            fetch(`${API_URL}/api/signals`),
+            fetch(`${API_URL}/api/alerts`)
+          ]);
+          const universe = await universeRes.json();
+          const signals = await signalsRes.json();
+          const alerts = await alertsRes.json();
+          state.universe = universe.universe || [];
+          state.rows = signals.rows || [];
+          state.alerts = alerts.alerts || [];
+          $('updatedAt').textContent = signals.ts ? new Date(signals.ts).toLocaleTimeString() : '--';
+          setStatus('api', true, 'API live');
+          renderTabs();
+          renderRows();
+          renderAlerts();
+        } catch (err) {
+          setStatus('api', false, 'API offline');
+          console.error(err);
+        }
+      }
+
+      function connectWs() {
+        const ws = new WebSocket(WS_URL);
+        ws.addEventListener('open', () => setStatus('ws', true, 'WS live'));
+        ws.addEventListener('close', () => {
+          setStatus('ws', false, 'WS retrying');
+          setTimeout(connectWs, 2500);
+        });
+        ws.addEventListener('error', () => setStatus('ws', false, 'WS error'));
+        ws.addEventListener('message', event => {
+          const msg = JSON.parse(event.data);
+          if (msg.type === 'signals') {
+            state.rows = msg.rows || [];
+            $('updatedAt').textContent = msg.ts ? new Date(msg.ts).toLocaleTimeString() : '--';
+            renderRows();
+          }
+          if (msg.type === 'alert') {
+            state.alerts.unshift(msg.alert);
+            renderAlerts();
+          }
+          if (msg.type === 'tick') {
+            setStatus('api', true, `${msg.tick.provider || 'feed'} tick ${msg.tick.symbol}`);
+          }
+        });
+      }
+
+      ['search', 'decision', 'mode', 'minScore', 'maxSideways'].forEach(id => {
+        $(id).addEventListener('input', renderRows);
+      });
+
+      $('dismissExit').addEventListener('click', () => {
+        state.exitDismissed = true;
+        renderRows();
+      });
+
+      $('simulateAlert').addEventListener('click', async () => {
+        await fetch(`${API_URL}/api/alert/simulate`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message: 'Manual reversal exit alert from dashboard.' })
+        });
+      });
+
+      loadInitial();
+      connectWs();
+    </script>
+  </body>
+</html>
